@@ -143,9 +143,11 @@ public class TSGShopScreen extends ScreenAdapter{
                     }
                     if(mPrefs.getInteger("8xSCOPE", 0) == 1){
                         mPrefs.putInteger("8xSCOPE", 2);
+                        mPrefs.putInteger("ACCURACY", mPrefs.getInteger("ACCURACY", 1) + 1);
                     }
                     if(mPrefs.getInteger("8xSCOPE", 0) == 2){
                         mPrefs.putInteger("8xSCOPE", 1);
+                        mPrefs.putInteger("ACCURACY", mPrefs.getInteger("ACCURACY", 1) - 1);
                     }
                     mPrefs.flush();
                 }
@@ -169,9 +171,11 @@ public class TSGShopScreen extends ScreenAdapter{
                     }
                     if(mPrefs.getInteger("BIPOD", 0) == 1){
                         mPrefs.putInteger("BIPOD", 2);
+                        mPrefs.putInteger("ACCURACY", mPrefs.getInteger("ACCURACY", 1) + 2);
                     }
                     if(mPrefs.getInteger("BIPOD", 0) == 2){
                         mPrefs.putInteger("BIPOD", 1);
+                        mPrefs.putInteger("ACCURACY", mPrefs.getInteger("ACCURACY", 1) - 2);
                     }
                     mPrefs.flush();
                 }
@@ -195,9 +199,11 @@ public class TSGShopScreen extends ScreenAdapter{
                     }
                     if(mPrefs.getInteger("MAGAZINE", 0) == 1){
                         mPrefs.putInteger("MAGAZINE", 2);
+                        mPrefs.putInteger("RATE OF FIRE", mPrefs.getInteger("RATE OF FIRE", 3) + 1);
                     }
                     if(mPrefs.getInteger("MAGAZINE", 0) == 2){
                         mPrefs.putInteger("MAGAZINE", 1);
+                        mPrefs.putInteger("RATE OF FIRE", mPrefs.getInteger("RATE OF FIRE", 3) - 1);
                     }
                     mPrefs.flush();
                 }
@@ -221,9 +227,11 @@ public class TSGShopScreen extends ScreenAdapter{
                     }
                     if(mPrefs.getInteger("METAL FRAME", 0) == 1){
                         mPrefs.putInteger("METAL FRAME", 2);
+                        mPrefs.putInteger("MUZZLE VELOCITY", mPrefs.getInteger("MUZZLE VELOCITY", 2) + 2);
                     }
                     if(mPrefs.getInteger("METAL FRAME", 0) == 2){
                         mPrefs.putInteger("METAL FRAME", 1);
+                        mPrefs.putInteger("MUZZLE VELOCITY", mPrefs.getInteger("MUZZLE VELOCITY", 2) - 2);
                     }
                     mPrefs.flush();
                 }
