@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
@@ -46,6 +47,10 @@ public class TSGGameScreen extends ScreenAdapter{
 
     //ステージ
     Stage mainStage;
+    Stage stopStage;
+
+    //一時停止ボタン
+    Button stopButton;
 
     //ゲーム状態の保持
     int mGameState;
@@ -60,7 +65,7 @@ public class TSGGameScreen extends ScreenAdapter{
     ArrayList<Bullet> bullets;
     Texture bulletTexture;
     int addbullet;
-    int rate = 3;
+    int rate;
     public static final int BULLET_STATE_CHARGE = 1;
     int chargeLevel;
 
@@ -85,7 +90,7 @@ public class TSGGameScreen extends ScreenAdapter{
     //コイン
     Coin coin;
     Texture coinTexture;
-    float createCoinParSec = 0.2f;
+    float createCoinParSec = 0.5f;
     int createCoinInterval;
 
     //背景
@@ -111,11 +116,175 @@ public class TSGGameScreen extends ScreenAdapter{
     Preferences mPrefs;
     Preferences coinPrefs;
 
+
     public TSGGameScreen(TargetShootingGame game){
         mGame = game;
         mPrefs = Gdx.app.getPreferences("TargetShootingGame");
         bulletState = BULLET_STATE_NOMAL;
         coinPrefs = Gdx.app.getPreferences("jp.MiniGameCollection");
+
+        //state
+        rate = mPrefs.getInteger("RATE OF FIRE", 3);
+
+        //一時停止ボタン
+        TextureRegion upRegion = new TextureRegion(new Texture("monkeystopbutton.png"), 420, 420);
+        TextureRegion downRegion = new TextureRegion(new Texture("monkeystopbutton.png"), 420, 420);
+        Button.ButtonStyle stopButtonStyle = new Button.ButtonStyle();
+        stopButtonStyle.up = new TextureRegionDrawable(upRegion);
+        stopButtonStyle.down = new TextureRegionDrawable(downRegion);
+        stopButtonStyle.down.setBottomHeight(-3);
+        stopButton = new Button(stopButtonStyle);
+        stopButton.setSize(50, 50);
+        stopButton.setPosition(CAMERA_WIDTH - 55, CAMERA_HEIGHT - 55);
+        stopButton.addListener(new InputListener(){
+            public void touchDragged (InputEvent event, float x, float y, int pointer){
+                Rectangle start = new Rectangle(0, 0, stopButton.getWidth(), stopButton.getHeight());
+                if(start.contains(x, y)){
+                    stopButton.setSize(50 * 0.96f, 50 * 0.96f);
+                    stopButton.setPosition(CAMERA_WIDTH - 55 + 50 * 0.02f, CAMERA_HEIGHT - 55 + 50 * 0.02f);
+                }else {
+                    stopButton.setSize(50, 50);
+                    stopButton.setPosition(CAMERA_WIDTH - 55, CAMERA_HEIGHT - 55);
+                }
+            }
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button){
+                stopButton.setSize(50 * 0.96f, 50 * 0.96f);
+                stopButton.setPosition(CAMERA_WIDTH - 55 + 50 * 0.02f, CAMERA_HEIGHT - 55 + 50 * 0.02f);
+                return true;
+            }
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                stopButton.setSize(50, 50);
+                stopButton.setPosition(CAMERA_WIDTH - 55, CAMERA_HEIGHT - 55);
+                Rectangle start = new Rectangle(0, 0, stopButton.getWidth(), stopButton.getHeight());
+                System.out.println("お呼び出し");
+                if(start.contains(x, y)){
+                    mGameState = GAME_STATE_STOP;
+                }
+            }
+        });
+
+        //スタート
+        TextureRegion startUpRegion = new TextureRegion(new Texture("monkeystopcancellbutton.png"), 420, 420);
+        TextureRegion startDownRegion = new TextureRegion(new Texture("monkeystopcancellbutton.png"), 420, 420);
+        Button.ButtonStyle startButtonStyle = new Button.ButtonStyle();
+        startButtonStyle.up = new TextureRegionDrawable(startUpRegion);
+        startButtonStyle.down = new TextureRegionDrawable(startDownRegion);
+        startButtonStyle.down.setBottomHeight(-3);
+        final Button startButton = new Button(startButtonStyle);
+        startButton.setSize(50, 50);
+        startButton.setPosition(60, 160);
+        startButton.addListener(new InputListener(){
+            public void touchDragged (InputEvent event, float x, float y, int pointer){
+                Rectangle startRect = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
+                if(startRect.contains(x, y)){
+                    startButton.setSize(50 * 0.96f, 50 * 0.96f);
+                    startButton.setPosition(60 + 50 * 0.02f, 160 + 50 * 0.02f);
+                }else {
+                    startButton.setSize(50, 50);
+                    startButton.setPosition(60, 160);
+                }
+            }
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                startButton.setSize(50 * 0.96f, 50 * 0.96f);
+                startButton.setPosition(60 + 50 * 0.02f, 160 + 50 * 0.02f);
+                return true;
+            }
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button){
+                startButton.setSize(50, 50);
+                startButton.setPosition(60, 160);
+                Rectangle startRect = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
+                if(startRect.contains(x, y)){
+                    mGameState = GAME_STATE_PLAYING;
+                }
+            }
+        });
+
+        //リスタートボタン
+        TextureRegion restartUpRegion = new TextureRegion(new Texture("monkeyretrybutton.png"), 420, 420);
+        TextureRegion restartDownRegion = new TextureRegion(new Texture("monkeyretrybutton.png"), 420, 420);
+        Button.ButtonStyle restartButtonStyle = new Button.ButtonStyle();
+        restartButtonStyle.up = new TextureRegionDrawable(restartUpRegion);
+        restartButtonStyle.down = new TextureRegionDrawable(restartDownRegion);
+        restartButtonStyle.down.setBottomHeight(-3);
+        final Button restartButton = new Button(restartButtonStyle);
+        restartButton.setSize(50, 50);
+        restartButton.setPosition(185, 160);
+        restartButton.addListener(new InputListener(){
+            public void touchDragged (InputEvent event, float x, float y, int pointer){
+                Rectangle startRect = new Rectangle(0, 0, restartButton.getWidth(), restartButton.getHeight());
+                if(startRect.contains(x, y)){
+                    restartButton.setSize(50 * 0.96f, 50 * 0.96f);
+                    restartButton.setPosition(185 + 50 * 0.02f, 160 + 50 * 0.02f);
+                }else {
+                    restartButton.setSize(50, 50);
+                    restartButton.setPosition(185, 160);
+                }
+            }
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                restartButton.setSize(50 * 0.96f, 50 * 0.96f);
+                restartButton.setPosition(185 + 50 * 0.02f, 160 + 50 * 0.02f);
+                return true;
+            }
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button){
+                restartButton.setSize(50, 50);
+                restartButton.setPosition(185, 160);
+                Rectangle startRect = new Rectangle(0, 0, restartButton.getWidth(), restartButton.getHeight());
+                if(startRect.contains(x, y)){
+                    mainStage.dispose();
+                    stopStage.dispose();
+                    mGame.setScreen(new TSGGameScreen(mGame));
+                }
+            }
+        });
+
+        //ホームボタン
+        TextureRegion homeUpRegion = new TextureRegion(new Texture("monkeyhomebutton.png"), 420, 420);
+        TextureRegion homeDownRegion = new TextureRegion(new Texture("monkeyhomebutton.png"), 420, 420);
+        Button.ButtonStyle homeButtonStyle = new Button.ButtonStyle();
+        homeButtonStyle.up = new TextureRegionDrawable(homeUpRegion);
+        homeButtonStyle.down = new TextureRegionDrawable(homeDownRegion);
+        homeButtonStyle.down.setBottomHeight(-3);
+        final Button homeButton = new Button(homeButtonStyle);
+        homeButton.setSize(50, 50);
+        homeButton.setPosition(125, 160);
+        homeButton.addListener(new InputListener(){
+            public void touchDragged (InputEvent event, float x, float y, int pointer){
+                Rectangle startRect = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
+                if(startRect.contains(x, y)){
+                    homeButton.setSize(50 * 0.96f, 50 * 0.96f);
+                    homeButton.setPosition(125 + 50 * 0.02f, 160 + 50 * 0.02f);
+                }else {
+                    homeButton.setSize(50, 50);
+                    homeButton.setPosition(125, 160);
+                }
+            }
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                homeButton.setSize(50 * 0.96f, 50 * 0.96f);
+                homeButton.setPosition(125 + 50 * 0.02f, 160 + 50 * 0.02f);
+                return true;
+            }
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button){
+                Rectangle startRect = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
+                homeButton.setSize(50, 50);
+                homeButton.setPosition(125, 160);
+                if(startRect.contains(x, y)){
+                    mainStage.dispose();
+                    stopStage.dispose();
+                    mGame.setScreen(new TSGGameScreen(mGame));
+                }
+            }
+        });
+
+        //ステージ
+        Sprite stopMenuBg = new Sprite(new Texture("buttonbackground.png"), 600, 400);
+        Image stopMenuBgImage = new Image(stopMenuBg);
+        stopMenuBgImage.setSize(200, 150);
+        stopMenuBgImage.setPosition(50, 150);
+        stopStage = new Stage(new FitViewport(CAMERA_WIDTH, CAMERA_HEIGHT));
+        stopStage.addActor(stopMenuBgImage);
+        stopStage.addActor(startButton);
+        stopStage.addActor(restartButton);
+        stopStage.addActor(homeButton);
 
         //チャージボタン
         TextureRegion chargeUp = new TextureRegion(new Texture("ChargeButtonUp.png"), 256, 256);
@@ -137,19 +306,19 @@ public class TSGGameScreen extends ScreenAdapter{
                 if(chargeRect.contains(x, y)){
                     bulletState = BULLET_STATE_NOMAL;
                     if(chargeLevel >= 30 && chargeLevel < 60){
-                        bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 0.8f, 1);
+                        bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 0.8f * 1.1f - 0.1f * (float)mPrefs.getInteger("ACCURACY, 1"), 1, mPrefs.getInteger("MUZZLE VELOCITY", 2));
                         bullet.setSize(30, 30);
                         bullet.setPosition(mGun.getX() + mGun.getWidth() / 2 - bullet.getWidth() / 2, mGun.getY() + mGun.getHeight());
                         bullets.add(bullet);
                         chargeLevel = 0;
                     }else if(chargeLevel >= 60 && chargeLevel < 90){
-                        bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 0.5f, 2);
+                        bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 0.5f * 1.1f - 0.1f * (float)mPrefs.getInteger("ACCURACY, 1"), 2, mPrefs.getInteger("MUZZLE VELOCITY", 2));
                         bullet.setSize(60, 60);
                         bullet.setPosition(mGun.getX() + mGun.getWidth() / 2 - bullet.getWidth() / 2, mGun.getY() + mGun.getHeight());
                         bullets.add(bullet);
                         chargeLevel = 0;
                     }else if(chargeLevel >= 90){
-                        bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 0.3f, 3);
+                        bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 0.3f * 1.1f - 0.1f * (float)mPrefs.getInteger("ACCURACY, 1"), 3, mPrefs.getInteger("MUZZLE VELOCITY", 2));
                         bullet.setSize(90, 90);
                         bullet.setPosition(mGun.getX() + mGun.getWidth() / 2 - bullet.getWidth() / 2, mGun.getY() + mGun.getHeight());
                         bullets.add(bullet);
@@ -193,10 +362,10 @@ public class TSGGameScreen extends ScreenAdapter{
         remainingTimeTexture = new Texture("RemainingTime.png");
         maxTimeTexture = new Texture("MaxRemainingTime.png");
         maxTime = new Sprite(maxTimeTexture, 0, 0, 476, 37);
-        maxTime.setSize(280, 15);
+        maxTime.setSize(230, 15);
         maxTime.setPosition(10, 420);
         remainingTime = new Sprite(remainingTimeTexture, 0, 0, 476, 37);
-        remainingTime.setSize(280, 15);
+        remainingTime.setSize(230, 15);
         remainingTime.setPosition(10, 420);
 
         //ゲーム初期状態
@@ -240,6 +409,7 @@ public class TSGGameScreen extends ScreenAdapter{
         whiteBg.setPosition(0, 0);
 
         mainStage.addActor(chargeButton);
+        mainStage.addActor(stopButton);
     }
 
     @Override
@@ -250,11 +420,20 @@ public class TSGGameScreen extends ScreenAdapter{
         update();
 
         //ステージ
-        Gdx.input.setInputProcessor(mainStage);
-        Matrix4 cameraMatrix = mainStage.getViewport().getCamera().combined;
-        mGame.batch.setProjectionMatrix(cameraMatrix);
-        mainStage.act();
-        mainStage.getViewport().getCamera().update();
+        if(mGameState == GAME_STATE_PLAYING || mGameState == GAME_STATE_READY){
+            Gdx.input.setInputProcessor(mainStage);
+            Matrix4 cameraMatrix = mainStage.getViewport().getCamera().combined;
+            mGame.batch.setProjectionMatrix(cameraMatrix);
+            mainStage.act();
+            mainStage.getViewport().getCamera().update();
+        }
+        if(mGameState == GAME_STATE_STOP){
+            Gdx.input.setInputProcessor(stopStage);
+            Matrix4 cameraMatrix = stopStage.getViewport().getCamera().combined;
+            mGame.batch.setProjectionMatrix(cameraMatrix);
+            stopStage.act();
+            stopStage.getViewport().getCamera().update();
+        }
 
         mGame.batch.begin();
         whiteBg.draw(mGame.batch);
@@ -275,7 +454,9 @@ public class TSGGameScreen extends ScreenAdapter{
         drawRemainingTime();
         mGame.batch.end();
 
-        mainStage.draw();
+        if(mGameState == GAME_STATE_PLAYING || mGameState == GAME_STATE_READY){
+            mainStage.draw();
+        }
 
         mGame.batch.begin();
         if(bulletState == BULLET_STATE_CHARGE){
@@ -285,6 +466,10 @@ public class TSGGameScreen extends ScreenAdapter{
             chargeGaugeLine2.draw(mGame.batch);
         }
         mGame.batch.end();
+
+        if(mGameState == GAME_STATE_STOP){
+            stopStage.draw();
+        }
     }
 
     public void update(){
@@ -308,9 +493,10 @@ public class TSGGameScreen extends ScreenAdapter{
     private void updatePlaying(){
         //弾
         if(bulletState == BULLET_STATE_NOMAL){
+            chargeLevel = 0;
             addbullet ++;
             if(addbullet == 60 / rate){
-                bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 1, 1);
+                bullet = new Bullet(bulletTexture, 0, 0, 128, 128, 1 * 1.1f - 0.1f * (float)mPrefs.getInteger("ACCURACY, 1"), 1, mPrefs.getInteger("MUZZLE VELOCITY", 2));
                 bullet.setSize(mGun.getWidth(), mGun.getWidth());
                 bullet.setPosition(mGun.getX(), mGun.getY() + mGun.getHeight());
                 bullets.add(bullet);
@@ -434,7 +620,7 @@ public class TSGGameScreen extends ScreenAdapter{
     public void drawRemainingTime(){
         maxTime.draw(mGame.batch);
         remainingTime.setRegionWidth((int)(476 / floatMaxRemainingTime * floatRemainingTime));
-        remainingTime.setSize(280 / floatMaxRemainingTime * floatRemainingTime, remainingTime.getHeight());
+        remainingTime.setSize(230 / floatMaxRemainingTime * floatRemainingTime, remainingTime.getHeight());
         remainingTime.draw(mGame.batch);
     }
 
@@ -447,5 +633,6 @@ public class TSGGameScreen extends ScreenAdapter{
     @Override
     public void resize(int width, int height){
         mainStage.getViewport().update(width, height);
+        stopStage.getViewport().update(width, height);
     }
 }

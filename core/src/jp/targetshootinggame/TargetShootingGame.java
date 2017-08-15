@@ -13,6 +13,6 @@ public class TargetShootingGame extends Game {
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		setScreen(new TSGGameScreen(this));
+		setScreen(new TSGShopScreen(this));
 	}
 }
